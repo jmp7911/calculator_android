@@ -3,6 +3,7 @@ package com.example.calculator;
 import android.content.Context;
 import android.os.Bundle;
 import android.text.Layout;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -48,6 +49,7 @@ public class FragmentButtonUI extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         view =  inflater.inflate(R.layout.fragment_button_ui, container, false);
+        mainView = View.inflate(getActivity(), R.layout.activity_main, null);
         return view;
     }
 /*
@@ -63,8 +65,13 @@ expressionString
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         buttonClear = view.findViewById(R.id.clear);
-
-
+        text = mainView.findViewById(R.id.text);
+        getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                text.setText("ㅎㅎㅎ");
+            }
+        });
         buttonClear.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -79,7 +86,14 @@ expressionString
         buttonDivide.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
+                Log.d("divide", "onClick: divide" + text.getText());
+                text.setText("/");
+//                getActivity().runOnUiThread(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        text.setText("ㅎㅎㅎ");
+//                    }
+//                });
             }
         });
         buttonMultiply = view.findViewById(R.id.multiply);
