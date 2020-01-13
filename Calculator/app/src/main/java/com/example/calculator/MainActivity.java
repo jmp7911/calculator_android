@@ -21,82 +21,176 @@ public class MainActivity extends AppCompatActivity implements FragmentButtonUI.
     public void clickedTextSet(String text) {
         String setText = editText.getText().toString() + text;
         editText.setText(setText);
-        if (text.equals("+") || text.equals("-")) {
-            stackUnit.push(text);
-        } else if (text.equals("X") || text.equals("%") || text.equals("/")) {
-            if (stackUnit.peek().equals("+") || stackUnit.peek().equals("-")) {
-                while(!stackUnit.empty()) {
-                    if (stackUnit.peek().equals("(")) {
-                        break;
-                    }
-                    exprList.add(stackUnit.pop());
-                }
-                stackUnit.push(text);
-            }
-        } else {
-            exprList.add(text);
-        }
     }
     @Override
     public void clickedClearSet() {
         editText.setText("");
+        postfixExprList.clear();
     }
     @Override
     public void clickedBracketSet() {
         String text = editText.getText().toString();
         int indexOftarget = editText.length() - 1;
         String target = "";
-        if (indexOftarget >= 0) {
+        if (text.length() >= 1) {
             target = Character.toString(text.charAt(indexOftarget));
-        }
-        if (target.equals("")) {
-            stack.push(getResources().getString(R.string.bracketopen));
-            stackUnit.push(getResources().getString(R.string.bracketopen));
-            clickedTextSet(getResources().getString(R.string.bracketopen));
-        } else if (target.equals("+") || target.equals("-") || target.equals("X") ||
-                target.equals("/") || target.equals("%")) {
-            stack.push(getResources().getString(R.string.bracketopen));
-            stackUnit.push(getResources().getString(R.string.bracketopen));
-            clickedTextSet(getResources().getString(R.string.bracketopen));
-        } else if (target.equals("(")) {
-            stack.push(getResources().getString(R.string.bracketopen));
-            stackUnit.push(getResources().getString(R.string.bracketopen));
-            clickedTextSet(getResources().getString(R.string.bracketopen));
-        } else if (target.equals(")") && !stack.empty()) {
-                stack.pop();
-                while (!stackUnit.peek().equals("(")) {
-                    exprList.add(stackUnit.pop());
-                }
-                clickedTextSet(getResources().getString(R.string.bracketclose));
-        }
-        else {
-            if (stack.empty()) {
-                stackUnit.push(getResources().getString(R.string.multiply));
-                stackUnit.push(getResources().getString(R.string.bracketopen));
-                clickedTextSet(getResources().getString(R.string.multiply));
+            if (target.equals("(")) {
+                stackBracket.push(getResources().getString(R.string.bracketopen));
                 clickedTextSet(getResources().getString(R.string.bracketopen));
-                stack.push(getResources().getString(R.string.bracketopen));
-
+            } else if (target.equals(")")) {
+                if (stackBracket.empty()) {
+                    clickedTextSet(getResources().getString(R.string.multiply));
+                    clickedTextSet(getResources().getString(R.string.bracketopen));
+                    stackBracket.push(getResources().getString(R.string.bracketopen));
+                } else {
+                    stackBracket.pop();
+                    clickedTextSet(getResources().getString(R.string.bracketclose));
+                }
+            } else {
+                for (Op o : Op.values()) {
+                    if (o.getName().equals(target)) {
+                        stackBracket.push(getResources().getString(R.string.bracketopen));
+                        clickedTextSet(getResources().getString(R.string.bracketopen));
+                        break;
+                    }
+                }
+                for (Num n : Num.values()) {
+                    if (n.getName().equals(target)) {
+                        if (stackBracket.empty()) {
+                            clickedTextSet(getResources().getString(R.string.multiply));
+                            clickedTextSet(getResources().getString(R.string.bracketopen));
+                            stackBracket.push(getResources().getString(R.string.bracketopen));
+                            break;
+                        }
+                        else {
+                            stackBracket.pop();
+                            clickedTextSet(getResources().getString(R.string.bracketclose));
+                            break;
+                        }
+                    }
+                }
             }
-            else {
-                stack.pop();
-                clickedTextSet(")");
-            }
+        } else {
+            stackBracket.push(getResources().getString(R.string.bracketopen));
+            clickedTextSet(getResources().getString(R.string.bracketopen));
         }
     }
     @Override
     public void clickedEqualSet() {
-        String expr = editText.getText().toString();
+        String infixExpr = editText.getText().toString();
+        toPostfixExpression(infixExpr, 0);
+        Object result = postfixExpressionCalculate(postfixExprList);
+        if (result instanceof Double) {
+            editText.setText(String.format("%f", result));
+        } else {
+            editText.setText(String.format("%d", result));
+        }
+        postfixExprList.clear();
 
     }
-
+    public void toPostfixExpression (String infixExpr, int start) {
+        if (start >= infixExpr.length()) {
+            while (!stackUnit.empty()) {
+                postfixExprList.add(stackUnit.pop());
+            }
+            return;
+        }
+        String target = Character.toString(infixExpr.charAt(start++));
+        if (target.equals("(")) {
+            stackUnit.push(target);
+        } else if (target.equals(")")) {
+            while (true) {
+                postfixExprList.add(stackUnit.pop());
+                if (stackUnit.empty()) break;
+                if (stackUnit.peek().equals("(")) {
+                    stackUnit.pop();
+                    break;
+                }
+            }
+        } else if (target.equals("+") || target.equals("-")) {
+            stackUnit.push(target);
+        } else if (target.equals("X") || target.equals("%") || target.equals("/")) {
+            if (stackUnit.empty()) {
+                stackUnit.push(target);
+            } else {
+                if (stackUnit.peek().equals("+") || stackUnit.peek().equals("-")) {
+                    while (!stackUnit.empty()) {
+                        if (stackUnit.peek().equals("(")) {
+                            stackUnit.pop();
+                            break;
+                        }
+                        postfixExprList.add(stackUnit.pop());
+                    }
+                    stackUnit.push(target);
+                } else {
+                    stackUnit.push(target);
+                }
+            }
+        } else if (target.equals(".")) {
+            num += target;
+        } else {
+            num += target;
+            double operand;
+            if (start != infixExpr.length()) {
+                String targetNext = Character.toString(infixExpr.charAt(start));
+                for (Op o : Op.values()) {
+                    if (o.getName().equals(targetNext)) {
+                            operand = Double.parseDouble(num);
+                            num = "";
+                            postfixExprList.add(operand);
+                            break;
+                        }
+                    }
+            } else {
+                    operand = Double.parseDouble(num);
+                    num = "";
+                    postfixExprList.add(operand);
+            }
+        }
+        toPostfixExpression(infixExpr, start);
+    }
+    public Object postfixExpressionCalculate (ArrayList<Object> exprList) {
+        Stack<Double> operandStack = new Stack<>();
+        for (Object o : exprList) {
+            Log.d("calculate", "postfixExpressionCalculate: "+ exprList);
+            double operand_1, operand_2;
+            if (o instanceof Double) {
+                operandStack.push((Double) o);
+            } else {
+                if (o.equals("+")) {
+                    operand_1 = operandStack.pop();
+                    operand_2 = operandStack.pop();
+                    operandStack.push(operand_1 + operand_2);
+                } else if (o.equals("-")) {
+                    operand_1 = operandStack.pop();
+                    operand_2 = operandStack.pop();
+                    operandStack.push(operand_1 - operand_2);
+                } else if (o.equals("X")) {
+                    operand_1 = operandStack.pop();
+                    operand_2 = operandStack.pop();
+                    operandStack.push(operand_1 * operand_2);
+                } else if (o.equals("/")) {
+                    operand_1 = operandStack.pop();
+                    operand_2 = operandStack.pop();
+                    operandStack.push(operand_1 / operand_2);
+                } else if (o.equals("%")) {
+                    operand_1 = operandStack.pop();
+                    operand_2 = operandStack.pop();
+                    operandStack.push(operand_1 % operand_2);
+                }
+            }
+        }
+        return operandStack.pop();
+    }
     ToggleButton buttonHistory;
     FragmentManager fragmentManager;
     EditText editText;
     Button buttonRemove;
-    Stack<String> stack = new Stack<>();
+    Stack<String> stackBracket = new Stack<>();
     Stack<String> stackUnit = new Stack<>();
-    ArrayList<String> exprList = new ArrayList<>();
+    ArrayList<Object> postfixExprList = new ArrayList<>();
+    String num = "";
+    Boolean isFloat = false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -141,5 +235,27 @@ public class MainActivity extends AppCompatActivity implements FragmentButtonUI.
                 }
             }
         });
+    }
+    public enum Num {
+        ONE("1"),TWO("2"),THREE("3"),FOUR("4"),FIVE("5"),SIX("6"),SEVEN("7"),EIGHT("8"),NINE("9"),ZERO("0");
+        final private String number;
+
+        Num(String number) {
+            this.number = number;
+        }
+        public String getName() {
+            return number;
+        }
+    }
+    public enum Op {
+        PLUS("+"),MINUS("-"),MULTIPLY("X"),DIVIDE("/"),REMAIN("%");
+        final private String op;
+
+        Op(String op) {
+            this.op = op;
+        }
+        public String getName() {
+            return op;
+        }
     }
 }

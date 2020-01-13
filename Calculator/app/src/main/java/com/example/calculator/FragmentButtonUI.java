@@ -130,7 +130,7 @@ public class FragmentButtonUI extends Fragment {
         buttonEqual.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
+                clickedTextListener.clickedEqualSet();
             }
         });
         buttonDot = view.findViewById(R.id.dot);
