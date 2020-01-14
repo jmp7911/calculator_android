@@ -11,6 +11,7 @@ import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.ToggleButton;
 
 import java.util.Stack;
 
@@ -46,7 +47,7 @@ public class FragmentButtonUI extends Fragment {
     private Button buttonSeven;
     private Button buttonEight;
     private Button buttonNine;
-    private Button buttonToggle;
+    private ToggleButton buttonToggle;
     Stack<String> stack = new Stack<String>();
     Stack<String> stackUnit = new Stack<String>();
 
@@ -211,12 +212,7 @@ public class FragmentButtonUI extends Fragment {
             }
         });
         buttonToggle = view.findViewById(R.id.toggle);
-        buttonToggle.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
 
-            }
-        });
         super.onActivityCreated(savedInstanceState);
     }
 
