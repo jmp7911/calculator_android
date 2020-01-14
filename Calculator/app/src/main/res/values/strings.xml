@@ -20,4 +20,6 @@
     <string name="dot">.</string>
     <string name="equal">=</string>
     <string name="toggle">+/-</string>
+    <string name="bracketopen">(</string>
+    <string name="bracketclose">)</string>
 </resources>
