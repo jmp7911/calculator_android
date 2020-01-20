@@ -6,6 +6,7 @@ import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
 import android.content.Context;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.os.Bundle;
@@ -16,10 +17,15 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ToggleButton;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Stack;
 
 public class MainActivity extends AppCompatActivity implements FragmentButtonUI.ClickedTextListener {
+    public interface CalculateListener {
+        ArrayList toPostfixExpression(String infixExpr, int start);
+        Object postfixExpressionCalculate(ArrayList exprList);
+    }
     @Override
     public void clickedTextSet(String text) {
         String setText = editText.getText().toString() + text;
@@ -28,7 +34,6 @@ public class MainActivity extends AppCompatActivity implements FragmentButtonUI.
     @Override
     public void clickedClearSet() {
         editText.setText("");
-        postfixExprList.clear();
     }
     @Override
     public void clickedBracketSet() {
@@ -50,14 +55,14 @@ public class MainActivity extends AppCompatActivity implements FragmentButtonUI.
                     clickedTextSet(getResources().getString(R.string.bracketclose));
                 }
             } else {
-                for (Op o : Op.values()) {
+                for (Operation o : Operation.values()) {
                     if (o.getName().equals(target)) {
                         stackBracket.push(getResources().getString(R.string.bracketopen));
                         clickedTextSet(getResources().getString(R.string.bracketopen));
                         break;
                     }
                 }
-                for (Num n : Num.values()) {
+                for (DecimalNumber n : DecimalNumber.values()) {
                     if (n.getName().equals(target)) {
                         if (stackBracket.empty()) {
                             clickedTextSet(getResources().getString(R.string.multiply));
@@ -81,9 +86,9 @@ public class MainActivity extends AppCompatActivity implements FragmentButtonUI.
     @Override
     public void clickedEqualSet() {
         String infixExpr = editText.getText().toString();
-        toPostfixExpression(infixExpr, 0);
-        Log.d("postfixExprList", "clickedEqualSet: " + postfixExprList);
-        Object result = postfixExpressionCalculate(postfixExprList);
+        Calculate calculate = new Calculate();
+        ArrayList<Object> postfixExprList = calculate.toPostfixExpression(infixExpr, 0);
+        Object result = calculate.postfixExpressionCalculate(postfixExprList);
         if (result instanceof Double) {
             editText.setText(String.format("%f", result));
         } else {
@@ -91,160 +96,16 @@ public class MainActivity extends AppCompatActivity implements FragmentButtonUI.
         }
         DBHelper dbHelper = new DBHelper(this);
         SQLiteDatabase db = dbHelper.getWritableDatabase();
-        db.execSQL("insert into tb_history (expression, result) values (?,?)",
-                new String[]{infixExpr, result.toString()});
-        db.close();
+        db.execSQL("insert into tb_history(expression, result) values (?,?)",
+                new String[] {infixExpr, result.toString()});
 
-        finish();
-        postfixExprList.clear();
     }
-    public void toPostfixExpression (String infixExpr, int start) {
-        if (start >= infixExpr.length()) {
-            while (!stackUnit.empty()) {
-                postfixExprList.add(stackUnit.pop());
-            }
-            return;
-        }
-
-        String target = Character.toString(infixExpr.charAt(start++));
-        if (target.equals("(")) {
-            stackUnit.push(target);
-        } else if (target.equals(")")) {
-            while (true) {
-                postfixExprList.add(stackUnit.pop());
-                if (stackUnit.empty()) break;
-                if (stackUnit.peek().equals("(")) {
-                    stackUnit.pop();
-                    break;
-                }
-            }
-        } else if (target.equals("+") || target.equals("-")) {
-            stackUnit.push(target);
-        } else if (target.equals("X") || target.equals("%") || target.equals("/")) {
-            if (stackUnit.empty()) {
-                stackUnit.push(target);
-            } else {
-                if (stackUnit.peek().equals("+") || stackUnit.peek().equals("-")) {
-                    while (!stackUnit.empty()) {
-                        if (stackUnit.peek().equals("(")) {
-                            stackUnit.pop();
-                            break;
-                        }
-                        postfixExprList.add(stackUnit.pop());
-                    }
-                    stackUnit.push(target);
-                } else {
-                    stackUnit.push(target);
-                }
-            }
-        } else if (target.equals(".")) {
-            num += target;
-            isFloat = true;
-        } else {
-            num += target;
-            double operand_db;
-            int operand_int;
-            if (start != infixExpr.length()) {
-                String targetNext = Character.toString(infixExpr.charAt(start));
-                for (Op o : Op.values()) {
-                    if (targetNext.equals(o.getName()) || targetNext.equals(")")) {
-                        if (isFloat) {
-                            operand_db = Double.parseDouble(num);
-                            num = "";
-                            postfixExprList.add(operand_db);
-                            isFloat = false;
-                            break;
-                        } else {
-                            operand_int = Integer.parseInt(num);
-                            num = "";
-                            postfixExprList.add(operand_int);
-                            break;
-                        }
-                    }
-                }
-            } else {
-                if (isFloat) {
-                    operand_db = Double.parseDouble(num);
-                    num = "";
-                    postfixExprList.add(operand_db);
-                    isFloat = false;
-                } else {
-                    operand_int = Integer.parseInt(num);
-                    num = "";
-                    postfixExprList.add(operand_int);
-                }
-            }
-        }
-        toPostfixExpression(infixExpr, start);
-    }
-    public Object postfixExpressionCalculate (ArrayList<Object> exprList) {
-        Stack<Object> operandStack = new Stack<>();
-        for (Object o : exprList) {
-            Object operand_1, operand_2;
-            if (o instanceof Double || o instanceof Integer) {
-                operandStack.push(o);
-            } else {
-                if (o.equals("+")) {
-                    operand_1 = operandStack.pop();
-                    operand_2 = operandStack.pop();
-                    if (operand_1 instanceof Double || operand_2 instanceof Double) {
-                        operandStack.push(toDouble(operand_2) + toDouble(operand_1));
-                    } else {
-                        operandStack.push(toInt(operand_2) + toInt(operand_1));
-                    }
-                } else if (o.equals("-")) {
-                    operand_1 = operandStack.pop();
-                    operand_2 = operandStack.pop();
-                    if (operand_1 instanceof Double || operand_2 instanceof Double) {
-                        operandStack.push(toDouble(operand_2) - toDouble(operand_1));
-                    } else {
-                        operandStack.push(toInt(operand_2) - toInt(operand_1));
-                    }
-                } else if (o.equals("X")) {
-                    operand_1 = operandStack.pop();
-                    operand_2 = operandStack.pop();
-                    if (operand_1 instanceof Double || operand_2 instanceof Double) {
-                        operandStack.push(toDouble(operand_2) * toDouble(operand_1));
-                    } else {
-                        operandStack.push(toInt(operand_2) * toInt(operand_1));
-                    }
-                } else if (o.equals("/")) {
-                    operand_1 = operandStack.pop();
-                    operand_2 = operandStack.pop();
-                    if (operand_1 instanceof Double || operand_2 instanceof Double) {
-                        operandStack.push(toDouble(operand_2) / toDouble(operand_1));
-                    } else {
-                        operandStack.push(toInt(operand_2) / toInt(operand_1));
-                    }
-                } else if (o.equals("%")) {
-                    operand_1 = operandStack.pop();
-                    operand_2 = operandStack.pop();
-                    if (operand_1 instanceof Double || operand_2 instanceof Double) {
-                        operandStack.push(toDouble(operand_2) % toDouble(operand_1));
-                    } else {
-                        operandStack.push(toInt(operand_2) % toInt(operand_1));
-                    }
-                }
-            }
-        }
-            return operandStack.pop();
-        }
-    public double toDouble(Object o) {
-        return Double.parseDouble(o.toString());
-    }
-    public int toInt(Object o) {
-        return Integer.parseInt(o.toString());
-    }
-
     ToggleButton buttonHistory;
     FragmentManager fragmentManager;
     EditText editText;
     Button buttonRemove;
     Stack<String> stackBracket = new Stack<>();
-    Stack<String> stackUnit = new Stack<>();
-    ArrayList<Object> postfixExprList = new ArrayList<>();
-    String num = "";
-    Boolean isFloat = false;
+    ArrayList<HistoryItem> historyItems;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -289,28 +150,7 @@ public class MainActivity extends AppCompatActivity implements FragmentButtonUI.
                 }
             }
         });
-    }
-    public enum Num {
-        ONE("1"),TWO("2"),THREE("3"),FOUR("4"),FIVE("5"),SIX("6"),SEVEN("7"),EIGHT("8"),NINE("9"),ZERO("0");
-        final private String number;
 
-        Num(String number) {
-            this.number = number;
-        }
-        public String getName() {
-            return number;
-        }
-    }
-    public enum Op {
-        PLUS("+"),MINUS("-"),MULTIPLY("X"),DIVIDE("/"),REMAIN("%");
-        final private String op;
-
-        Op(String op) {
-            this.op = op;
-        }
-        public String getName() {
-            return op;
-        }
     }
 
 }

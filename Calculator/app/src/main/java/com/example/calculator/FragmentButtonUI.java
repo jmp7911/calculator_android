@@ -48,8 +48,6 @@ public class FragmentButtonUI extends Fragment {
     private Button buttonEight;
     private Button buttonNine;
     private ToggleButton buttonToggle;
-    Stack<String> stack = new Stack<String>();
-    Stack<String> stackUnit = new Stack<String>();
 
     @Override
     public void onAttach(Context context) {
@@ -66,16 +64,6 @@ public class FragmentButtonUI extends Fragment {
         return view;
     }
 
-    /*
-    1 * / %
-    2 + -
-    3 ()
-
-    ex (-29*(-6+7=
-    후위 - exprList
-    stackUnit
-    expressionString
-     */
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         buttonClear = view.findViewById(R.id.clear);
