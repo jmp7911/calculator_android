@@ -24,7 +24,7 @@ import java.util.Stack;
 public class MainActivity extends AppCompatActivity implements FragmentButtonUI.ClickedTextListener {
     public interface CalculateListener {
         ArrayList toPostfixExpression(String infixExpr, int start);
-        Object postfixExpressionCalculate(ArrayList exprList);
+        Object postfixExpressionCalculate(ArrayList<Object> exprList);
     }
     @Override
     public void clickedTextSet(String text) {
@@ -89,23 +89,23 @@ public class MainActivity extends AppCompatActivity implements FragmentButtonUI.
         Calculate calculate = new Calculate();
         ArrayList<Object> postfixExprList = calculate.toPostfixExpression(infixExpr, 0);
         Object result = calculate.postfixExpressionCalculate(postfixExprList);
-        if (result instanceof Double) {
-            editText.setText(String.format("%f", result));
-        } else {
-            editText.setText(String.format("%d", result));
-        }
+//        if (result instanceof Double) {
+//            editText.setText(String.format("%f", result));
+//        } else {
+//            editText.setText(String.format("%d", result));
+//        }
+        editText.setText(result.toString());
         DBHelper dbHelper = new DBHelper(this);
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         db.execSQL("insert into tb_history(expression, result) values (?,?)",
                 new String[] {infixExpr, result.toString()});
-
+        db.close();
     }
     ToggleButton buttonHistory;
     FragmentManager fragmentManager;
     EditText editText;
     Button buttonRemove;
     Stack<String> stackBracket = new Stack<>();
-    ArrayList<HistoryItem> historyItems;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

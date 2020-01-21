@@ -10,6 +10,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ListView;
 
 import java.lang.reflect.Array;
@@ -26,6 +27,7 @@ public class FragmentHistory extends Fragment {
     DBHelper dbHelper;
     HistoryAdapter adapter;
     ArrayList<HistoryItem> histories = new ArrayList<>();
+    Button delete_history;
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
@@ -38,6 +40,7 @@ public class FragmentHistory extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_history, container, false);
         listView = view.findViewById(R.id.list_item);
+        delete_history = view.findViewById(R.id.delete_history);
 
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         Cursor cursor = db.rawQuery("select * from tb_history", null);
@@ -51,10 +54,18 @@ public class FragmentHistory extends Fragment {
         listView.setAdapter(adapter);
         return view;
     }
-
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-
+        delete_history.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                SQLiteDatabase db = dbHelper.getWritableDatabase();
+                db.execSQL("delete from tb_history");
+                db.close();
+                histories.clear();
+                listView.setAdapter(adapter);
+            }
+        });
         super.onActivityCreated(savedInstanceState);
     }
 
