@@ -147,13 +147,14 @@
         android:background="@drawable/radius"
         android:text="@string/plus"
         android:textSize="30sp" />
-    <Button
+    <ToggleButton
         android:id="@+id/toggle"
+        android:textOff="@string/toggle"
+        android:textOn="@string/toggle"
         android:layout_width="100dp"
         android:layout_height="65dp"
         android:layout_below="@id/one"
         android:background="@drawable/radius"
-        android:text="@string/toggle"
         android:textSize="30sp" />
     <Button
         android:id="@+id/zero"

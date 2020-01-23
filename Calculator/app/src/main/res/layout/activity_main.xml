@@ -13,15 +13,29 @@
         android:textSize="50sp"
         android:id="@+id/text"
         android:background="@color/white"
-        android:inputType="text"
+        android:inputType="textMultiLine"
+        android:scrollbars="vertical"
         />
-    <ToggleButton
-        android:id="@+id/history"
-        android:layout_width="60dp"
-        android:layout_height="60dp"
-        android:textOff=""
-        android:textOn=""
-        android:background="@drawable/history" />
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <ToggleButton
+            android:id="@+id/history"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:textOff=""
+            android:textOn=""
+            android:background="@drawable/history" />
+        <Button
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:id="@+id/remove"
+            android:background="@drawable/remove"
+            />
+    </LinearLayout>
+
+
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
